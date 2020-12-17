@@ -690,7 +690,8 @@ check_all_ports_link_status(uint32_t port_mask)
 }
 
 static void
-log_link_state(struct rte_kni *kni, int prev, struct rte_eth_link *link)
+log_link_state(struct rte_kni *kni, int prev, struct rte_eth_link *link, int port_id)
+//log_link_state(struct rte_kni *kni, int prev, struct rte_eth_link *link)
 {
 	if (kni == NULL || link == NULL)
 		return;
@@ -701,9 +702,16 @@ log_link_state(struct rte_kni *kni, int prev, struct rte_eth_link *link)
 			link->link_speed,
 			link->link_autoneg ?  "(AutoNeg)" : "(Fixed)",
 			link->link_duplex ?  "Full Duplex" : "Half Duplex");
+                RTE_LOG(INFO, APP, "###### REPRODUCER ######: Running rte_eth_dev_start(%d)\n",
+                        port_id);
+                rte_eth_dev_start(port_id);
 	} else if (prev == ETH_LINK_UP && link->link_status == ETH_LINK_DOWN) {
 		RTE_LOG(INFO, APP, "%s NIC Link is Down.\n",
 			rte_kni_get_name(kni));
+		// akaris hack
+		RTE_LOG(INFO, APP, "###### REPRODUCER ######: Running rte_eth_dev_stop(%d)\n",
+                        port_id);
+		rte_eth_dev_stop(port_id);
 	}
 }
 
@@ -731,7 +739,8 @@ monitor_all_ports_link_status(void *arg)
 			for (i = 0; i < p[portid]->nb_kni; i++) {
 				prev = rte_kni_update_link(p[portid]->kni[i],
 						link.link_status);
-				log_link_state(p[portid]->kni[i], prev, &link);
+				//log_link_state(p[portid]->kni[i], prev, &link);
+				log_link_state(p[portid]->kni[i], prev, &link, portid);
 			}
 		}
 	}
